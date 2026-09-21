@@ -82,17 +82,22 @@ jobs:
           java-version: '${javaVersion}'
           cache: 'gradle'
 
-      - name: 🤖 Set up Android SDK & NDK
-        uses: android-actions/setup-android@v3
+      - name: 🤖 Set up Android SDK Environment
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: 🔧 Install Android NDK & CMake
+      - name: 🔧 Install Android NDK & Build Tools
         run: |
           NDK_VER="\${{ github.event.inputs.ndk_version || '${ndkVersion}' }}"
-          echo "Installing Android NDK: $NDK_VER..."
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install "ndk;$NDK_VER" "cmake;3.22.1" "build-tools;34.0.0" "platforms;android-34"
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/$NDK_VER" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_VER" >> $GITHUB_ENV
+          echo "Accepting Android SDK licenses..."
+          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          echo "Installing NDK ($NDK_VER), CMake 3.22.1, and Build Tools 34.0.0..."
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --install "ndk;$NDK_VER" "cmake;3.22.1" "build-tools;34.0.0" "platforms;android-34"
+          echo "ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/$NDK_VER" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/$NDK_VER" >> $GITHUB_ENV
 
       - name: 📦 Compile Native Android ALSA & SysV Shared Memory Modules
         run: |
