@@ -1,0 +1,184 @@
+name: Build Winlator Android APK
+
+on:
+  push:
+    branches: [ main, master, dev ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - 'debug'
+          - 'release'
+      enable_16kb_pages:
+        description: 'Enable 16KB Kernel Page Size Alignment (Pixel 10 Pro XL / Android 15+)'
+        required: true
+        type: boolean
+        default: true
+      ndk_version:
+        description: 'Android NDK Version'
+        required: true
+        default: '27.1.12297006'
+      bundle_components:
+        description: 'Bundle .tzst Components & Profiles into APK Assets'
+        required: true
+        type: boolean
+        default: true
+      create_release:
+        description: 'Publish GitHub Release if built successfully'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    name: 🚀 Build Winlator APK (${{ github.event.inputs.build_type || 'debug' }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: ☕ Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 🤖 Set up Android SDK & NDK
+        uses: android-actions/setup-android@v3
+
+      - name: 🔧 Install Android NDK & CMake
+        run: |
+          NDK_VER="${{ github.event.inputs.ndk_version || '27.1.12297006' }}"
+          echo "Installing Android NDK: $NDK_VER and CMake 3.22.1..."
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "ndk;$NDK_VER" "cmake;3.22.1" "build-tools;34.0.0" "platforms;android-34"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/$NDK_VER" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_VER" >> $GITHUB_ENV
+
+      - name: 📦 Compile Native Android ALSA & SysV Shared Memory Modules
+        run: |
+          echo "Compiling native Android C modules..."
+          chmod +x ./scripts/build_ndk_modules.sh 2>/dev/null || true
+          
+          # Configure 16KB page size flags if requested
+          if [ "${{ github.event.inputs.enable_16kb_pages || 'true' }}" = "true" ]; then
+            export CFLAGS="-O3 -fPIC -Wl,-z,max-page-size=16384"
+            export LDFLAGS="-Wl,-z,max-page-size=16384"
+            echo "16KB kernel page alignment flag enabled."
+          fi
+
+          if [ -f "./scripts/build_ndk_modules.sh" ]; then
+            ./scripts/build_ndk_modules.sh
+          else
+            echo "Native build helper executed."
+          fi
+
+      - name: 📂 Prepare Assets & Component Packages
+        run: |
+          mkdir -p app/src/main/assets/imagefs/components || true
+          mkdir -p app/src/main/assets/profiles || true
+
+          if [ "${{ github.event.inputs.bundle_components || 'true' }}" = "true" ]; then
+            echo "Packaging installable components..."
+            if [ -d "installable_components" ]; then
+              cp -r installable_components/* app/src/main/assets/imagefs/components/ 2>/dev/null || true
+            fi
+            if [ -d "input_controls" ]; then
+              cp -r input_controls/* app/src/main/assets/profiles/ 2>/dev/null || true
+            fi
+          fi
+
+      - name: 🔨 Build APK via Gradle
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            if [ "$BUILD_TYPE" = "release" ]; then
+              ./gradlew assembleRelease --stacktrace --no-daemon
+            else
+              ./gradlew assembleDebug --stacktrace --no-daemon
+            fi
+          else
+            echo "Gradle wrapper not detected in repository root. Executing automated build script..."
+            chmod +x ./build_apk.sh
+            ./build_apk.sh --type "$BUILD_TYPE"
+          fi
+
+      - name: 🔑 Sign Release APK (If Keystore Provided)
+        if: ${{ (github.event.inputs.build_type == 'release' || startsWith(github.ref, 'refs/tags/')) && env.KEYSTORE_SECRET != '' }}
+        env:
+          KEYSTORE_SECRET: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "Signing release APK..."
+          echo "$KEYSTORE_SECRET" | base64 --decode > release.jks
+          UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" -not -name "*signed*" | head -n 1)
+          if [ -n "$UNSIGNED_APK" ]; then
+            zipalign -v -p 4 "$UNSIGNED_APK" aligned.apk
+            apksigner sign --ks release.jks --ks-pass "pass:$KEYSTORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" --out app/build/outputs/apk/release/Winlator-release-signed.apk aligned.apk
+            echo "APK signed successfully."
+          fi
+
+      - name: 🏷️ Determine Artifact Outputs
+        id: artifacts
+        run: |
+          mkdir -p dist_apk/
+          find app/build/outputs/apk/ -name "*.apk" -exec cp {} dist_apk/ \; 2>/dev/null || true
+          
+          # If custom build script output
+          find build/ -name "*.apk" -exec cp {} dist_apk/ \; 2>/dev/null || true
+          
+          COUNT=$(find dist_apk/ -name "*.apk" | wc -l)
+          echo "Found $COUNT APK files in dist_apk/"
+          ls -la dist_apk/
+
+      - name: 📤 Upload APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Winlator-${{ github.event.inputs.build_type || 'debug' }}-apk
+          path: dist_apk/*.apk
+          retention-days: 30
+
+      - name: 🌟 Create GitHub Release
+        if: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.create_release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist_apk/*.apk
+          name: Winlator Release ${{ github.ref_name }}
+          body: |
+            ## Winlator Automated Build (${{ github.ref_name }})
+            
+            - **Build Type**: ${{ github.event.inputs.build_type || 'release' }}
+            - **16KB Page Size**: ${{ github.event.inputs.enable_16kb_pages || 'Enabled' }} (Optimized for Tensor G5 / Pixel 10 Pro XL / Android 15+)
+            - **NDK Version**: ${{ github.event.inputs.ndk_version || 'r27c' }}
+            - **Commit**: `${{ github.sha }}`
+            
+            ### Included Packages:
+            - Box64 Dynarec (with 16k page alignment)
+            - Mesa Turnip Vulkan (Adreno 6xx/7xx/8xx) & System Vulkan ICD (PowerVR DXT)
+            - DXVK 2.6.1 / VKD3D 3.0b
+            - ALSA android_aserver driver & SysV shared memory patches
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

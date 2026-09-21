@@ -6,11 +6,12 @@ import { ComponentsCatalog } from './components/ComponentsCatalog';
 import { ContainerConfigurator } from './components/ContainerConfigurator';
 import { TroubleshooterAdvisor } from './components/TroubleshooterAdvisor';
 import { AudioAndPatches } from './components/AudioAndPatches';
+import { ApkBuildStudio } from './components/ApkBuildStudio';
 import { INITIAL_PROFILES } from './data/profilesData';
 import { InputControlProfile } from './types';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'profiles' | 'catalog' | 'container' | 'troubleshoot' | 'audio'>('profiles');
+  const [activeTab, setActiveTab] = useState<'profiles' | 'catalog' | 'container' | 'troubleshoot' | 'audio' | 'build'>('profiles');
   const [profiles, setProfiles] = useState<InputControlProfile[]>(() => {
     const saved = localStorage.getItem('winlator_profiles');
     if (saved) {
@@ -188,6 +189,10 @@ export function App() {
 
         {activeTab === 'audio' && (
           <AudioAndPatches />
+        )}
+
+        {activeTab === 'build' && (
+          <ApkBuildStudio />
         )}
 
       </main>

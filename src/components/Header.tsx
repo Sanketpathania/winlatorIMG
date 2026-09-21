@@ -1,9 +1,9 @@
 import React from 'react';
-import { Gamepad2, Package, Settings2, HelpCircle, Volume2, Download, Upload, Plus } from 'lucide-react';
+import { Gamepad2, Package, Settings2, HelpCircle, Volume2, Download, Upload, Plus, Workflow } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'profiles' | 'catalog' | 'container' | 'troubleshoot' | 'audio';
-  setActiveTab: (tab: 'profiles' | 'catalog' | 'container' | 'troubleshoot' | 'audio') => void;
+  activeTab: 'profiles' | 'catalog' | 'container' | 'troubleshoot' | 'audio' | 'build';
+  setActiveTab: (tab: 'profiles' | 'catalog' | 'container' | 'troubleshoot' | 'audio' | 'build') => void;
   onNewProfile: () => void;
   onImportProfile: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onExportCurrentProfile: () => void;
@@ -114,6 +114,19 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Volume2 className="w-4 h-4" />
               <span>ALSA & Audio</span>
+            </button>
+
+            <button
+              id="tab-build"
+              onClick={() => setActiveTab('build')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === 'build'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-semibold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+              }`}
+            >
+              <Workflow className="w-4 h-4" />
+              <span>GitHub APK Build</span>
             </button>
           </nav>
 
