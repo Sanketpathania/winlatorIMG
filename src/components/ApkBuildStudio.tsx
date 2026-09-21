@@ -124,9 +124,9 @@ jobs:
             ./scripts/apply_baked_optimizations.sh
           fi
 
-      - name: 📦 Compile Native Android ALSA & SysV Shared Memory Modules
+      - name: 📦 Compile Native Vortek PowerVR, ALSA & SysV Shared Memory Modules
         run: |
-          echo "Compiling native Android C modules..."
+          echo "Compiling native Android C/C++ modules (Vortek PowerVR, ALSA, SysV)..."
           chmod +x ./scripts/build_ndk_modules.sh 2>/dev/null || true
           
           # 16KB kernel page size support

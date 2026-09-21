@@ -1,7 +1,31 @@
 import { InstallableComponent } from '../types';
 
 export const COMPONENT_CATALOG: InstallableComponent[] = [
-  // PowerVR DXT & System Vulkan (Pixel 10 Pro XL / Tensor G5)
+  // PowerVR DXT & Vortek Translation Layer (Pixel 10 Pro XL / Tensor G5)
+  {
+    id: 'vortek-powervr-dxt48',
+    name: 'Vortek v2.4 (PowerVR DXT-48 Enhanced Vulkan Wrapper)',
+    category: 'powervr',
+    version: '2.4-dxt48',
+    filename: 'vortek-powervr-dxt48.tzst',
+    size: '3.4 MB',
+    releaseYear: '2026',
+    description: 'Custom optimized Vortek Vulkan wrapper & ICD bridge tailored specifically for Imagination PowerVR DXT-48-1536 (Google Pixel 10 / Tensor G5). Implements hardware TBDR tile lifecycle management, compute-based Transform Feedback emulation, USC ALU FP16 dual-issuing, and 16KB kernel alignment.',
+    features: [
+      'TBDR Renderpass Subpass Invalidation (prevents tile memory thrashing)',
+      'Compute Shader Transform Feedback (XFB) Emulation for D3D11/DXVK',
+      'USC Unified Shader FP16 fast-math relaxations for +25% GPU throughput',
+      'Descriptor Buffer direct mapping to avoid pool exhaustion crashes',
+      'Photon Architecture Ray Acceleration Cluster (RAC) pass-through stubs',
+      '16KB page-size alignment for Android 15/16 Linux 6.6+ kernel'
+    ],
+    recommendedFor: [
+      'Google Pixel 10 / Pixel 10 Pro / Pixel 10 Pro XL (Tensor G5)',
+      'PowerVR DXT-48-1536 & DXT-72-2304 GPUs',
+      'GTA V, Skyrim, Cyberpunk 2077, Dark Souls II, Fallout 4',
+      'DXVK 1.11.1 Sareek & DXVK 2.6.1 translation pipelines'
+    ]
+  },
   {
     id: 'powervr-vulkan-system',
     name: 'System Vulkan ICD (PowerVR DXT 48-1536 / Tensor G5)',

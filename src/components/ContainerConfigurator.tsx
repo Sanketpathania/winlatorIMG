@@ -16,6 +16,37 @@ import {
 
 const PRESET_TEMPLATES: { name: string; desc: string; config: ContainerConfig }[] = [
   {
+    name: 'Pixel 10 Pro XL - Vortek DXT48 Turbo (Tensor G5)',
+    desc: 'Cutting-edge Vortek v2.4 wrapper with TBDR Subpass Invalidation, Transform Feedback (XFB) emulation, and DXVK 1.11.1 Sareek Async for zero-stutter gaming on PowerVR DXT48.',
+    config: {
+      name: 'Pixel10-Vortek-DXT48-Turbo',
+      screenResolution: '1280x720',
+      graphicsDriver: 'Vortek v2.4 (PowerVR DXT-48 Enhanced ICD)',
+      turnipVersion: 'None (PowerVR DXT GPU)',
+      dxvkVersion: 'dxvk-1.11.1-sareek',
+      vkd3dVersion: 'vkd3d-3.0b',
+      box64Preset: 'Stability',
+      box64Version: 'box64-0.3.7-16k',
+      audioDriver: 'ALSA',
+      audioLatencyMs: 35,
+      envVars: [
+        { key: 'VORTEK_TBDR_DISCARD', value: '1' },
+        { key: 'VORTEK_EMULATE_XFB', value: '1' },
+        { key: 'VORTEK_USC_FAST_MATH', value: '1' },
+        { key: 'BOX64_DYNAREC_PAGE_SIZE', value: '16384' },
+        { key: 'BOX64_DYNAREC_FASTROUND', value: '1' },
+        { key: 'BOX64_DYNAREC_SAFE', value: '1' },
+        { key: 'DXVK_ASYNC', value: '1' },
+        { key: 'DXVK_FILTER_DEVICE_NAME', value: 'PowerVR' },
+        { key: 'MESA_VK_WSI_PRESENT_MODE', value: 'mailbox' }
+      ],
+      execArgs: '',
+      forceFullscreen: true,
+      wineMono: true,
+      pageSize16k: true,
+    }
+  },
+  {
     name: 'Google Pixel 10 Pro XL (Tensor G5 / PowerVR DXT)',
     desc: 'Targeted for Imagination PowerVR DXT-48-1536 ray-tracing GPU on Tensor G5. Uses System Vulkan ICD and 16KB kernel page alignment.',
     config: {
@@ -355,7 +386,7 @@ export const ContainerConfigurator: React.FC = () => {
                   value={config.graphicsDriver}
                   onChange={(e) => {
                     const val = e.target.value;
-                    const isPowerVR = val.includes('PowerVR') || val.includes('System Vulkan');
+                    const isPowerVR = val.includes('PowerVR') || val.includes('System Vulkan') || val.includes('Vortek');
                     setConfig({
                       ...config,
                       graphicsDriver: val,
@@ -364,6 +395,7 @@ export const ContainerConfigurator: React.FC = () => {
                   }}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500"
                 >
+                  <option value="Vortek v2.4 (PowerVR DXT-48 Enhanced ICD)">Vortek v2.4 (PowerVR DXT-48 Enhanced ICD / Tensor G5)</option>
                   <option value="System Vulkan (PowerVR DXT / Tensor G5)">System Vulkan (PowerVR DXT 48-1536 / Tensor G5)</option>
                   <option value="Turnip (Mesa Vulkan)">Turnip (Qualcomm Adreno Vulkan Only)</option>
                   <option value="WineD3D (OpenGL)">WineD3D (PowerVR DXT / Mali OpenGL ES)</option>

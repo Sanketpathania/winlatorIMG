@@ -2,6 +2,42 @@ import { TroubleshootingTip } from '../types';
 
 export const TROUBLESHOOTING_TIPS: TroubleshootingTip[] = [
   {
+    id: 'vortek-powervr-dxt48-tuning',
+    title: 'Vortek v2.4 Driver Optimization for PowerVR DXT-48 (Tensor G5 / Pixel 10)',
+    category: 'powervr',
+    symptom: 'Low FPS, shader compilation stutter, or missing geometric models in DirectX 9/11/12 games on Google Pixel 10 (PowerVR DXT-48-1536).',
+    solution: 'Use the enhanced Vortek v2.4 ICD with TBDR Renderpass Invalidation, Transform Feedback (XFB) compute emulation, and DXVK 1.11.1 Sareek Async.',
+    steps: [
+      'In Container Settings -> Graphics Driver, select "Vortek v2.4 (PowerVR DXT-48 Enhanced ICD)".',
+      'Set DXVK to "dxvk-1.11.1-sareek" or "dxvk-2.6.1".',
+      'In Environment Variables, set VORTEK_TBDR_DISCARD=1 to prevent TBDR tile load/store memory thrashing.',
+      'Set VORTEK_EMULATE_XFB=1 to enable vertex stream output emulation for GTA V, Skyrim, and Witcher 3.',
+      'Set VORTEK_USC_FAST_MATH=1 to enable FP16 dual-issue execution on PowerVR Unified Shading Clusters (+25% throughput).',
+      'Set BOX64_DYNAREC_PAGE_SIZE=16384 and BOX64_DYNAREC_SAFE=1 for kernel stability.'
+    ],
+    suggestedEnvVars: {
+      VORTEK_TBDR_DISCARD: '1',
+      VORTEK_EMULATE_XFB: '1',
+      VORTEK_USC_FAST_MATH: '1',
+      BOX64_DYNAREC_PAGE_SIZE: '16384',
+      BOX64_DYNAREC_FASTROUND: '1',
+      BOX64_DYNAREC_SAFE: '1',
+      DXVK_ASYNC: '1',
+      DXVK_FILTER_DEVICE_NAME: 'PowerVR',
+      MESA_VK_WSI_PRESENT_MODE: 'mailbox'
+    },
+    suggestedConfig: {
+      graphicsDriver: 'Vortek v2.4 (PowerVR DXT-48 Enhanced ICD)',
+      turnipVersion: 'None (PowerVR DXT GPU)',
+      dxvkVersion: 'dxvk-1.11.1-sareek',
+      box64Preset: 'Stability',
+      box64Version: 'box64-0.3.7-16k',
+      screenResolution: '1280x720',
+      audioLatencyMs: 35,
+      pageSize16k: true
+    }
+  },
+  {
     id: 'pixel-10-powervr-setup',
     title: 'Pixel 10 Pro XL / Tensor G5 (PowerVR DXT 48-1536) Configuration Guide',
     category: 'powervr',

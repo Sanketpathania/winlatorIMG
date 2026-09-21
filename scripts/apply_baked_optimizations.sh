@@ -46,6 +46,13 @@ if [ -d "$SCRIPT_DIR/installable_components" ]; then
   echo "  - Pre-packaged driver components into APK assets/imagefs/components/"
 fi
 
+# Copy Vortek source and compiled binaries to assets and jniLibs
+if [ -d "$SCRIPT_DIR/vortek_powervr" ]; then
+  mkdir -p "$ASSETS_DIR/imagefs/components/vortek" "$APP_DIR/src/main/jniLibs/arm64-v8a" 2>/dev/null || true
+  cp -rf "$SCRIPT_DIR/vortek_powervr" "$ASSETS_DIR/imagefs/components/vortek/source" 2>/dev/null || true
+  echo "  - Integrated Vortek PowerVR DXT-48 source into APK imagefs assets."
+fi
+
 # 3. Optimize AndroidManifest.xml
 MANIFEST="$APP_DIR/src/main/AndroidManifest.xml"
 if [ -f "$MANIFEST" ]; then

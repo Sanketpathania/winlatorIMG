@@ -36,6 +36,20 @@ if [ -n "$NDK_PATH" ] && [ -d "$NDK_PATH" ]; then
         -o "$JNILIBS_DIR/libasound_module_pcm_android_aserver.so" 2>/dev/null || true
       echo "  -> libasound_module_pcm_android_aserver.so compiled."
     fi
+
+    # 2. Compile Vortek PowerVR DXT-48 Native Vulkan Translation Layer
+    if [ -f "$SCRIPT_DIR/vortek_powervr/src/vortek_core.c" ]; then
+      echo "Compiling Vortek PowerVR DXT-48 native translation layer..."
+      $CC -O3 -fPIC -shared \
+        -Wl,-z,max-page-size=16384 \
+        -I"$SCRIPT_DIR/vortek_powervr/include" \
+        "$SCRIPT_DIR/vortek_powervr/src/vortek_core.c" \
+        "$SCRIPT_DIR/vortek_powervr/src/vortek_interceptor.c" \
+        -llog -ldl \
+        -o "$JNILIBS_DIR/libvortek_powervr.so" 2>/dev/null || true
+      cp -f "$JNILIBS_DIR/libvortek_powervr.so" "$JNILIBS_DIR/libvortek.so" 2>/dev/null || true
+      echo "  -> libvortek_powervr.so & libvortek.so compiled and active."
+    fi
   else
     echo "NDK Clang binary not found. Skipping direct NDK compile."
   fi
