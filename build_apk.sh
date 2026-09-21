@@ -105,11 +105,31 @@ if [ -d "$SCRIPT_DIR/input_controls" ]; then
   echo "  - Bundled $(ls -1 "$SCRIPT_DIR/input_controls" | wc -l) touch control game profiles."
 fi
 
-# 4. Build APK via Gradle
+# 4. Ensure Winlator Android App Source is Available
+echo ">> Checking Android Studio project source..."
+if [ ! -f "$SCRIPT_DIR/gradlew" ] && [ ! -d "$SCRIPT_DIR/app/src/main" ]; then
+  echo "Android project files not found in root. Initializing submodules/upstream..."
+  git submodule update --init --recursive 2>/dev/null || true
+fi
+
+if [ ! -f "$SCRIPT_DIR/gradlew" ] && [ ! -d "$SCRIPT_DIR/app/src/main" ]; then
+  echo "Cloning Winlator Android Studio frontend base..."
+  git clone --depth 1 https://github.com/brunodev85/winlator.git "$SCRIPT_DIR/_winlator_base" 2>/dev/null || true
+  if [ -d "$SCRIPT_DIR/_winlator_base" ]; then
+    cp -rn "$SCRIPT_DIR/_winlator_base"/* "$SCRIPT_DIR/" 2>/dev/null || true
+    cp -rn "$SCRIPT_DIR/_winlator_base"/.* "$SCRIPT_DIR/" 2>/dev/null || true
+    rm -rf "$SCRIPT_DIR/_winlator_base"
+  fi
+fi
+
+# 5. Build APK via Gradle
 echo ">> Initiating Gradle APK build (${BUILD_TYPE})..."
 if [ -f "$SCRIPT_DIR/gradlew" ]; then
   chmod +x "$SCRIPT_DIR/gradlew"
-  GRADLE_CMD="./gradlew"
+  GRADLE_CMD="$SCRIPT_DIR/gradlew"
+elif [ -f "$SCRIPT_DIR/app/gradlew" ]; then
+  chmod +x "$SCRIPT_DIR/app/gradlew"
+  GRADLE_CMD="$SCRIPT_DIR/app/gradlew"
 else
   GRADLE_CMD="gradle"
 fi
@@ -125,16 +145,17 @@ fi
 
 if [ "$BUILD_TYPE" = "release" ]; then
   $GRADLE_CMD assembleRelease $GRADLE_FLAGS || {
-    echo "Warning: Gradle assembleRelease returned non-zero code. If running in a container, please use GitHub Actions workflow."
+    echo "Warning: Gradle assembleRelease returned non-zero code."
   }
 else
   $GRADLE_CMD assembleDebug $GRADLE_FLAGS || {
-    echo "Warning: Gradle assembleDebug returned non-zero code. If running in a container, please use GitHub Actions workflow."
+    echo "Warning: Gradle assembleDebug returned non-zero code."
   }
 fi
 
-# 5. Collect outputs
-find "$SCRIPT_DIR/app/build/outputs/apk" -name "*.apk" -exec cp {} "$OUTPUT_DIR/" \; 2>/dev/null || true
+# 6. Collect outputs
+echo ">> Collecting output APKs..."
+find "$SCRIPT_DIR" -type f -name "*.apk" -not -path "*/dist_apk/*" -exec cp -v {} "$OUTPUT_DIR/" \; 2>/dev/null || true
 
 echo ""
 echo "========================================================"

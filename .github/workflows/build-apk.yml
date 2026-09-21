@@ -77,6 +77,25 @@ jobs:
           echo "ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/$NDK_VER" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/$NDK_VER" >> $GITHUB_ENV
 
+      - name: 📂 Initialize Winlator Android Project Source
+        run: |
+          echo "Verifying Winlator Android App Source..."
+          if [ ! -f "./gradlew" ] && [ ! -d "./app/src/main" ]; then
+            echo "Submodule not populated. Fetching Winlator Android source tree..."
+            git submodule update --init --recursive || true
+          fi
+          
+          # If still not found, clone the Winlator Android upstream project base
+          if [ ! -f "./gradlew" ] && [ ! -d "./app/src/main" ]; then
+            echo "Cloning Winlator Android Studio frontend base..."
+            git clone --depth 1 https://github.com/brunodev85/winlator.git _winlator_base || true
+            if [ -d "_winlator_base" ]; then
+              cp -rn _winlator_base/* . 2>/dev/null || true
+              cp -rn _winlator_base/.* . 2>/dev/null || true
+              rm -rf _winlator_base
+            fi
+          fi
+
       - name: 📦 Compile Native Android ALSA & SysV Shared Memory Modules
         run: |
           echo "Compiling native Android C modules..."
@@ -101,12 +120,12 @@ jobs:
           mkdir -p app/src/main/assets/profiles || true
 
           if [ "${{ github.event.inputs.bundle_components || 'true' }}" = "true" ]; then
-            echo "Packaging installable components..."
+            echo "Packaging installable components and control profiles..."
             if [ -d "installable_components" ]; then
-              cp -r installable_components/* app/src/main/assets/imagefs/components/ 2>/dev/null || true
+              cp -rf installable_components/* app/src/main/assets/imagefs/components/ 2>/dev/null || true
             fi
             if [ -d "input_controls" ]; then
-              cp -r input_controls/* app/src/main/assets/profiles/ 2>/dev/null || true
+              cp -rf input_controls/* app/src/main/assets/profiles/ 2>/dev/null || true
             fi
           fi
 
@@ -121,41 +140,35 @@ jobs:
             else
               ./gradlew assembleDebug --stacktrace --no-daemon
             fi
+          elif [ -f "./app/gradlew" ]; then
+            cd app && chmod +x ./gradlew
+            if [ "$BUILD_TYPE" = "release" ]; then
+              ./gradlew assembleRelease --stacktrace --no-daemon
+            else
+              ./gradlew assembleDebug --stacktrace --no-daemon
+            fi
+            cd ..
           else
-            echo "Gradle wrapper not detected in repository root. Executing automated build script..."
+            echo "Executing automated build script..."
             chmod +x ./build_apk.sh
             ./build_apk.sh --type "$BUILD_TYPE"
           fi
 
-      - name: 🔑 Sign Release APK (If Keystore Provided)
-        if: ${{ (github.event.inputs.build_type == 'release' || startsWith(github.ref, 'refs/tags/')) && env.KEYSTORE_SECRET != '' }}
-        env:
-          KEYSTORE_SECRET: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          echo "Signing release APK..."
-          echo "$KEYSTORE_SECRET" | base64 --decode > release.jks
-          UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" -not -name "*signed*" | head -n 1)
-          if [ -n "$UNSIGNED_APK" ]; then
-            zipalign -v -p 4 "$UNSIGNED_APK" aligned.apk
-            apksigner sign --ks release.jks --ks-pass "pass:$KEYSTORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" --out app/build/outputs/apk/release/Winlator-release-signed.apk aligned.apk
-            echo "APK signed successfully."
-          fi
-
-      - name: 🏷️ Determine Artifact Outputs
+      - name: 🏷️ Collect & Validate APK Artifacts
         id: artifacts
         run: |
           mkdir -p dist_apk/
-          find app/build/outputs/apk/ -name "*.apk" -exec cp {} dist_apk/ \; 2>/dev/null || true
-          
-          # If custom build script output
-          find build/ -name "*.apk" -exec cp {} dist_apk/ \; 2>/dev/null || true
+          echo "Searching for generated APK files..."
+          find . -type f -name "*.apk" -not -path "*/dist_apk/*" -exec cp -v {} dist_apk/ \; 2>/dev/null || true
           
           COUNT=$(find dist_apk/ -name "*.apk" | wc -l)
           echo "Found $COUNT APK files in dist_apk/"
           ls -la dist_apk/
+          
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::No APK files were produced by the Gradle build step."
+            exit 1
+          fi
 
       - name: 📤 Upload APK Artifacts
         uses: actions/upload-artifact@v4

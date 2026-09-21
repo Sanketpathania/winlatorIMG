@@ -99,6 +99,24 @@ jobs:
           echo "ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/$NDK_VER" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/$NDK_VER" >> $GITHUB_ENV
 
+      - name: 📂 Initialize Winlator Android Project Source
+        run: |
+          echo "Verifying Winlator Android App Source..."
+          if [ ! -f "./gradlew" ] && [ ! -d "./app/src/main" ]; then
+            echo "Submodule not populated. Fetching Winlator Android source tree..."
+            git submodule update --init --recursive || true
+          fi
+          
+          if [ ! -f "./gradlew" ] && [ ! -d "./app/src/main" ]; then
+            echo "Cloning Winlator Android Studio frontend base..."
+            git clone --depth 1 https://github.com/brunodev85/winlator.git _winlator_base || true
+            if [ -d "_winlator_base" ]; then
+              cp -rn _winlator_base/* . 2>/dev/null || true
+              cp -rn _winlator_base/.* . 2>/dev/null || true
+              rm -rf _winlator_base
+            fi
+          fi
+
       - name: 📦 Compile Native Android ALSA & SysV Shared Memory Modules
         run: |
           echo "Compiling native Android C modules..."
@@ -161,11 +179,19 @@ jobs:
             apksigner sign --ks release.jks --ks-pass "pass:$KEYSTORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASSWORD" --out app/build/outputs/apk/release/Winlator-release-signed.apk aligned.apk
           fi
 
-      - name: 🏷️ Collect APK Artifacts
+      - name: 🏷️ Collect & Validate APK Artifacts
         run: |
           mkdir -p dist_apk/
-          find app/build/outputs/apk/ -name "*.apk" -exec cp {} dist_apk/ \\; 2>/dev/null || true
-          find build/ -name "*.apk" -exec cp {} dist_apk/ \\; 2>/dev/null || true
+          echo "Searching for generated APK files..."
+          find . -type f -name "*.apk" -not -path "*/dist_apk/*" -exec cp -v {} dist_apk/ \\; 2>/dev/null || true
+          
+          COUNT=$(find dist_apk/ -name "*.apk" | wc -l)
+          echo "Found $COUNT APK files in dist_apk/"
+          
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::No APK files were produced by the Gradle build step."
+            exit 1
+          fi
 
       - name: 📤 Upload APK Artifacts
         uses: actions/upload-artifact@v4
