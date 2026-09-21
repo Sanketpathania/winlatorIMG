@@ -1,0 +1,6 @@
+{
+  "name": "Winlator Hub & Control Profile Studio",
+  "description": "Interactive control profile manager, visual layout editor for .icp files, installable component catalog, and container configuration studio for Winlator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
