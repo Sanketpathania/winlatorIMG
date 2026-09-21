@@ -396,6 +396,7 @@ export const ContainerConfigurator: React.FC = () => {
                   <option value="dxvk-2.6.1">dxvk-2.6.1 (Latest D3D11 - System Vulkan)</option>
                   <option value="dxvk-2.5.2">dxvk-2.5.2 (High Stability)</option>
                   <option value="dxvk-2.3.1">dxvk-2.3.1 (PowerVR Recommended)</option>
+                  <option value="dxvk-1.11.1-sareek">dxvk-1.11.1-sareek (Sareek Async Mod - Zero Stutter)</option>
                   <option value="dxvk-1.7.2">dxvk-1.7.2 (DirectX 9 Retro Specialist)</option>
                   <option value="wined3d-10.0">wined3d-10.0 (OpenGL Backend)</option>
                 </select>

@@ -7,12 +7,34 @@ import {
   Zap, 
   CheckCircle2, 
   HelpCircle, 
-  ShieldCheck
+  ShieldCheck,
+  Download,
+  FileCheck
 } from 'lucide-react';
 
 export const ComponentsCatalog: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeComponent, setActiveComponent] = useState<InstallableComponent>(COMPONENT_CATALOG[0]);
+  const [downloaded, setDownloaded] = useState<boolean>(false);
+
+  const handleDownload = (comp: InstallableComponent) => {
+    // Generate package payload
+    const dummyBlob = new Blob([
+      `# Winlator Installable Component Package\n# Name: ${comp.name}\n# Version: ${comp.version}\n# Architecture: ARM64\n# Category: ${comp.category}\n`
+    ], { type: 'application/octet-stream' });
+    
+    const url = URL.createObjectURL(dummyBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = comp.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 3500);
+  };
 
   const filteredComponents = selectedCategory === 'all'
     ? COMPONENT_CATALOG
@@ -166,6 +188,24 @@ export const ComponentsCatalog: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Download Button */}
+            <button
+              onClick={() => handleDownload(activeComponent)}
+              className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition-all active:scale-[0.98]"
+            >
+              {downloaded ? (
+                <>
+                  <FileCheck className="w-4 h-4 text-slate-950" />
+                  <span>Downloaded {activeComponent.filename}!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-slate-950" />
+                  <span>Download Package ({activeComponent.filename})</span>
+                </>
+              )}
+            </button>
 
             {/* Winlator Installation Instructions Box */}
             <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-2 text-xs">

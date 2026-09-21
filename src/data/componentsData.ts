@@ -153,6 +153,18 @@ export const COMPONENT_CATALOG: InstallableComponent[] = [
     recommendedFor: ['Snapdragon 865/870']
   },
   {
+    id: 'dxvk-1.11.1-sareek',
+    name: 'DXVK v1.11.1 (Sareek Async Mod)',
+    category: 'dxvk',
+    version: '1.11.1-sareek',
+    filename: 'dxvk-1.11.1-sareek.tzst',
+    size: '6.4 MB',
+    releaseYear: '2023',
+    description: 'Highly acclaimed custom DXVK 1.11.1 build modified by Sareek with baked-in async pipeline compilation, zero shader micro-stutters, and lightweight Direct3D 11 resource management optimized for mobile GPUs (PowerVR, Mali, Adreno).',
+    features: ['Baked-in dxvk.enableAsync = true support', 'Zero pipeline stutter on shader creation', 'Ultra-low CPU overhead on ARM64 translation', 'Broad compatibility with DirectX 9/10/11 engines'],
+    recommendedFor: ['Google Pixel 10 / Tensor G5', 'GTA 5', 'Skyrim Legendary/SE', 'Far Cry 3/4', 'Dark Souls 2', 'Assassin\'s Creed', 'NFS Most Wanted']
+  },
+  {
     id: 'dxvk-1.7.2',
     name: 'DXVK v1.7.2 (Legacy D3D9 Classic)',
     category: 'dxvk',
