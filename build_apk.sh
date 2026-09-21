@@ -122,7 +122,13 @@ if [ ! -f "$SCRIPT_DIR/gradlew" ] && [ ! -d "$SCRIPT_DIR/app/src/main" ]; then
   fi
 fi
 
-# 5. Build APK via Gradle
+# 5. Apply Baked-in Performance & 16KB Compatibility Patches
+if [ -f "$SCRIPT_DIR/scripts/apply_baked_optimizations.sh" ]; then
+  chmod +x "$SCRIPT_DIR/scripts/apply_baked_optimizations.sh"
+  "$SCRIPT_DIR/scripts/apply_baked_optimizations.sh"
+fi
+
+# 6. Build APK via Gradle
 echo ">> Initiating Gradle APK build (${BUILD_TYPE})..."
 if [ -f "$SCRIPT_DIR/gradlew" ]; then
   chmod +x "$SCRIPT_DIR/gradlew"

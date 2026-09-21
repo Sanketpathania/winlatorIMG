@@ -96,6 +96,13 @@ jobs:
             fi
           fi
 
+      - name: ⚡ Apply Baked-In Performance & 16KB Compatibility Patches
+        run: |
+          chmod +x ./scripts/apply_baked_optimizations.sh 2>/dev/null || true
+          if [ -f "./scripts/apply_baked_optimizations.sh" ]; then
+            ./scripts/apply_baked_optimizations.sh
+          fi
+
       - name: 📦 Compile Native Android ALSA & SysV Shared Memory Modules
         run: |
           echo "Compiling native Android C modules..."
